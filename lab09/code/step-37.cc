@@ -116,9 +116,6 @@ namespace Step37
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
       {
-        AssertDimension(coefficient.size(0), data.n_macro_cells());
-        AssertDimension(coefficient.size(1), phi.n_q_points);
-
         phi.reinit (cell);
         phi.read_dof_values(src);
         phi.evaluate (false, true);
@@ -184,9 +181,6 @@ namespace Step37
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
       {
-        AssertDimension(coefficient.size(0), data.n_macro_cells());
-        AssertDimension(coefficient.size(1), phi.n_q_points);
-
         phi.reinit (cell);
         for (unsigned int i=0; i<phi.dofs_per_cell; ++i)
           {
