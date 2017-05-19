@@ -13,7 +13,7 @@ and
    the number of iterations.
 
 2. This example uses a geometric multigrid preconditioner that gives constant
-   iteration times as the mesh is refined, as opposed to the
+   iteration numbers as the mesh is refined, as opposed to the
    ``PreconditionIdentity`` that was used in the early labs. Check the number
    of iterations with the conjugate gradient method.
 
