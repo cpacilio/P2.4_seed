@@ -560,7 +560,7 @@ namespace Step37
         setup_system ();
         assemble_rhs ();
         solve ();
-        compare_performance_matrix_vector();
+        //compare_performance_matrix_vector();
       };
   }
 }
