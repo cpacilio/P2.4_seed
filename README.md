@@ -10,7 +10,7 @@ Running deal.II on Ulysses
 
 If you have access to Uylsses, you can add the following to your `.bashrc`:
 
-	. /home/mathlab/candi-gnu-6.2.0/configuration/enable.sh
+	. /home/mathlab/dealii-trilinos-p4est/set_up_dealii.sh
 
 This will export all libraries required by `deal.II`, and the latest stable  version of `deal.II` (v8.5.0).
 
