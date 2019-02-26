@@ -15,92 +15,64 @@
 
  */
 
+#include <deal.II/dofs/dof_handler.h>
 
+#include <deal.II/fe/fe_q.h>
 
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_out.h>
+#include <deal.II/grid/manifold_lib.h>
 #include <deal.II/grid/tria.h>
 #include <deal.II/grid/tria_accessor.h>
 #include <deal.II/grid/tria_iterator.h>
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/manifold_lib.h>
-#include <deal.II/grid/grid_out.h>
 
-#include <iostream>
-#include <fstream>
+#include <deal.II/lac/vector.h>
+
+#include <deal.II/numerics/data_out.h>
+
 #include <cmath>
+#include <fstream>
+#include <iostream>
 
 using namespace dealii;
 
 
-void first_grid ()
+int main()
 {
-  Triangulation<2> triangulation;
+  const int dim    = 2;
+  const int degree = 2;
 
-  GridGenerator::hyper_cube (triangulation);
-  triangulation.refine_global (4);
+  Triangulation<dim> triangulation;
 
-  std::ofstream out ("grid-1.eps");
-  GridOut grid_out;
-  grid_out.write_eps (triangulation, out);
-  std::cout << "Grid written to grid-1.eps" << std::endl;
-}
+  FE_Q<dim>            fe(degree);
+  DoFHandler<dim>      dh(triangulation);
+  MappingQGeneric<dim> mapping(degree);
 
+  GridGenerator::hyper_shell(triangulation, Point<dim>(), .5, 1.0);
 
+  dh.distribute_dofs(fe);
 
+  std::vector<Vector<double>> solution(dh.n_dofs(),
+                                       Vector<double>(dh.n_dofs()));
 
-void second_grid ()
-{
-  Triangulation<2> triangulation;
+  DataOut<dim>          data_out;
+  DataOutBase::VtkFlags flags;
+  flags.write_higher_order_cells = true;
+  data_out.set_flags(flags);
 
-  const Point<2> center (1,0);
-  const double inner_radius = 0.5,
-               outer_radius = 1.0;
-  GridGenerator::hyper_shell (triangulation,
-                              center, inner_radius, outer_radius,
-                              10);
-  triangulation.set_all_manifold_ids(0);
-  const SphericalManifold<2> manifold_description(center);
-  triangulation.set_manifold (0, manifold_description);
+  std::cout << "Dofs: " << dh.n_dofs() << std::endl;
+  std::cout << "Vertices: " << triangulation.n_vertices() << std::endl;
 
-  for (unsigned int step=0; step<5; ++step)
+  std::ofstream out("solution.vtk");
+
+  data_out.attach_dof_handler(dh);
+
+  for (unsigned int i = 0; i < dh.n_dofs(); ++i)
     {
-      Triangulation<2>::active_cell_iterator
-      cell = triangulation.begin_active(),
-      endc = triangulation.end();
-      for (; cell!=endc; ++cell)
-        {
-          for (unsigned int v=0;
-               v < GeometryInfo<2>::vertices_per_cell;
-               ++v)
-            {
-              const double distance_from_center
-                = center.distance (cell->vertex(v));
-
-              if (std::fabs(distance_from_center - inner_radius) < 1e-10)
-                {
-                  cell->set_refine_flag ();
-                  break;
-                }
-            }
-        }
-
-      triangulation.execute_coarsening_and_refinement ();
+      solution[i][i] = 1;
+      data_out.add_data_vector(solution[i], "solution_" + std::to_string(i));
     }
 
-
-  std::ofstream out ("grid-2.eps");
-  GridOut grid_out;
-  grid_out.write_eps (triangulation, out);
-
-  std::cout << "Grid written to grid-2.eps" << std::endl;
-
-  triangulation.set_manifold (0);
-}
-
-
-
-
-int main ()
-{
-  first_grid ();
-  second_grid ();
+  data_out.build_patches(mapping, degree, DataOut<dim>::curved_inner_cells);
+  data_out.write_vtk(out);
 }
