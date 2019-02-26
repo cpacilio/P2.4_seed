@@ -50,6 +50,12 @@
 #include <fstream>
 #include <iostream>
 
+#include <math.h>
+
+//to define functions
+#include <deal.II/base/function_parser.h>
+
+
 using namespace dealii;
 
 
@@ -78,6 +84,8 @@ private:
 
   Vector<double>       solution;
   Vector<double>       system_rhs;
+  // exact solution
+  mutable Vector<double>       exact_sol;
 };
 
 
@@ -117,6 +125,7 @@ void Step3::setup_system ()
 
   solution.reinit (dof_handler.n_dofs());
   system_rhs.reinit (dof_handler.n_dofs());
+  exact_sol.reinit(dof_handler.n_dofs());
 }
 
 
@@ -125,7 +134,7 @@ void Step3::assemble_system ()
 {
   QGauss<2>  quadrature_formula(2);
   FEValues<2> fe_values (fe, quadrature_formula,
-                         update_values | update_gradients | update_JxW_values);
+                         update_values | update_gradients | update_JxW_values | update_quadrature_points);
 
   const unsigned int   dofs_per_cell = fe.dofs_per_cell;
   const unsigned int   n_q_points    = quadrature_formula.size();
@@ -146,7 +155,10 @@ void Step3::assemble_system ()
 
       for (unsigned int q_index=0; q_index<n_q_points; ++q_index)
         {
-          for (unsigned int i=0; i<dofs_per_cell; ++i)
+	
+	  const auto& xx = fe_values.quadrature_point(q_index);
+          
+	for (unsigned int i=0; i<dofs_per_cell; ++i)
             for (unsigned int j=0; j<dofs_per_cell; ++j)
               cell_matrix(i,j) += (fe_values.shape_grad (i, q_index) *
                                    fe_values.shape_grad (j, q_index) *
@@ -154,7 +166,7 @@ void Step3::assemble_system ()
 
           for (unsigned int i=0; i<dofs_per_cell; ++i)
             cell_rhs(i) += (fe_values.shape_value (i, q_index) *
-                            1 *
+                            40*M_PI*M_PI*sin(2*M_PI*xx[0])*sin(6*M_PI*xx[1])*
                             fe_values.JxW (q_index));
         }
       cell->get_dof_indices (local_dof_indices);
@@ -195,14 +207,33 @@ void Step3::solve ()
 
 
 void Step3::output_results () const
-{
+	{
+
+//compute exact solution
+//initialize function
+  std::string variables = "x,y";
+  std::map<std::string,double> constants;
+  constants["pi"] = numbers::PI;
+  std::string expression = "sin(2*pi*x)*sin(6*pi*y)";
+  FunctionParser<2> fp(1);
+  fp.initialize(variables, expression, constants);
+
+//plot
   DataOut<2> data_out;
   data_out.attach_dof_handler (dof_handler);
   data_out.add_data_vector (solution, "solution");
+
+//interpolate function
+  VectorTools::interpolate(dof_handler,fp,exact_sol);
+
+  data_out.add_data_vector (exact_sol, "exact_sol");
   data_out.build_patches ();
 
-  std::ofstream output ("solution.gpl");
-  data_out.write_gnuplot (output);
+  std::ofstream output ("solution.vtk");
+  data_out.write_vtk (output);
+
+  std::cout << "Error: " << (exact_sol -= solution).linfty_norm() << std::endl;
+
 }
 
 
@@ -224,6 +255,8 @@ int main ()
 
   Step3 laplace_problem;
   laplace_problem.run ();
+
+
 
   return 0;
 }
