@@ -1,0 +1,10 @@
+/home/dealii/P2.4_seed/exercises/lab01/step-1/build/CMakeFiles/edit_cache.dir
+/home/dealii/P2.4_seed/exercises/lab01/step-1/build/CMakeFiles/rebuild_cache.dir
+/home/dealii/P2.4_seed/exercises/lab01/step-1/build/CMakeFiles/info.dir
+/home/dealii/P2.4_seed/exercises/lab01/step-1/build/CMakeFiles/strip_comments.dir
+/home/dealii/P2.4_seed/exercises/lab01/step-1/build/CMakeFiles/distclean.dir
+/home/dealii/P2.4_seed/exercises/lab01/step-1/build/CMakeFiles/runclean.dir
+/home/dealii/P2.4_seed/exercises/lab01/step-1/build/CMakeFiles/step-1.dir
+/home/dealii/P2.4_seed/exercises/lab01/step-1/build/CMakeFiles/release.dir
+/home/dealii/P2.4_seed/exercises/lab01/step-1/build/CMakeFiles/run.dir
+/home/dealii/P2.4_seed/exercises/lab01/step-1/build/CMakeFiles/debug.dir
