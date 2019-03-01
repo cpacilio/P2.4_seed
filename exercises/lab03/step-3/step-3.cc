@@ -31,6 +31,7 @@
 #include <deal.II/fe/fe_q.h>
 
 #include <deal.II/dofs/dof_tools.h>
+#include<deal.II/dofs/dof_renumbering.h>
 
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/base/quadrature_lib.h>
@@ -55,10 +56,14 @@
 //to define functions
 #include <deal.II/base/function_parser.h>
 
-
 using namespace dealii;
 
+//I modify this file along the following lines:
+//1. the RHS of the EOM becomes sin(2*pi*x)sin(6*pi*y)
+//2. estimate the error of the numerical solution w.r.t. to exact one with varios norms
 
+//Moreover, I decided to implement by myself a quadrature-weighted L2_norm
+//and I compared my result with the one from the built-in function "integrate_difference"
 
 class Step3
 {
@@ -84,9 +89,6 @@ private:
 
   Vector<double>       solution;
   Vector<double>       system_rhs;
-  // exact solution
-  //not here: here is private! unless you flag as mutable...
-  //Vector<double>       exact_sol;
 };
 
 
@@ -118,6 +120,9 @@ void Step3::setup_system ()
             << dof_handler.n_dofs()
             << std::endl;
 
+  //re-enumerate the dofs
+  DoFRenumbering::Cuthill_McKee(dof_handler);
+
   DynamicSparsityPattern dsp(dof_handler.n_dofs());
   DoFTools::make_sparsity_pattern (dof_handler, dsp);
   sparsity_pattern.copy_from(dsp);
@@ -127,8 +132,6 @@ void Step3::setup_system ()
   solution.reinit (dof_handler.n_dofs());
   system_rhs.reinit (dof_handler.n_dofs());
   
-  //initialize the exact solution
-  //exact_sol.reinit(dof_handler.n_dofs());
 }
 
 
@@ -136,7 +139,7 @@ void Step3::setup_system ()
 void Step3::assemble_system ()
 {
   QGauss<2>  quadrature_formula(2);
-  //update_quadrature_points to use as function arguments
+  //update_quadrature_points to use them as function arguments
   FEValues<2> fe_values (fe, quadrature_formula,
                          update_values | update_gradients | update_JxW_values | update_quadrature_points);
 
@@ -159,9 +162,9 @@ void Step3::assemble_system ()
 
       for (unsigned int q_index=0; q_index<n_q_points; ++q_index)
         {
-	//map the quadrature points
+	//map the local Q_point
 	const auto& xx = fe_values.quadrature_point(q_index);
-	//function on the RHS
+	//function on the RHS at the local Q_point
 	const double FF = 40*M_PI*M_PI*sin(2*M_PI*xx[0])*sin(6*M_PI*xx[1]);     
   
 	for (unsigned int i=0; i<dofs_per_cell; ++i){
@@ -213,8 +216,9 @@ void Step3::solve ()
 void Step3::output_results () const
 {
 
-//compute exact solution
-//initialize function
+//--------compute exact solution---------
+
+  //initialize function
   std::string variables = "x,y";
   std::map<std::string,double> constants;
   constants["pi"] = numbers::PI;
@@ -222,34 +226,36 @@ void Step3::output_results () const
   FunctionParser<2> fp(1);
   fp.initialize(variables, expression, constants);
 
-//plot
-  DataOut<2> data_out;
-  data_out.attach_dof_handler (dof_handler);
-  data_out.add_data_vector (solution, "solution");
-
-//interpolate function
+  //interpolate function
   Vector<double>       exact_sol;
   exact_sol.reinit(dof_handler.n_dofs());
   VectorTools::interpolate(dof_handler,fp,exact_sol);
+
+  //plot the two functions
+  DataOut<2> data_out;
+  data_out.attach_dof_handler (dof_handler);
+  data_out.add_data_vector (solution, "solution");
   data_out.add_data_vector (exact_sol, "exact_sol");
-  
+
   data_out.build_patches ();
 
   std::ofstream output ("solution.vtk");
   data_out.write_vtk (output);
 
+  //compute error norms
   Vector<double>  norm_vec(exact_sol);
-  norm_vec-= solution;
+  norm_vec-= solution; //sol - exact_sol
   std::cout << "L_infty norm: " << (norm_vec).linfty_norm() << std::endl;
-  const double norm_factor =  1./dof_handler.n_dofs();
+  double norm_factor =  1./dof_handler.n_dofs(); //normalization for Lp_norms
   std::cout << "Normalized L_1 norm: " << (norm_vec).l1_norm()*norm_factor << std::endl;
   std::cout << "Normalized L_2 norm: " << (norm_vec).l2_norm()*sqrt(norm_factor) << std::endl;
 
-//my L2_norm -------
-  //I want to estimate error via a Quadrature_L2_norm
+//--------my L2_norm -------
+  //I want to estimate error via a Quadrature version of the L2_norm
   //There is a built in function that does this: integrate_difference
   //However, it is a good exercise to do it manually and compare the two results
-  //First of all, I set variables of general utility
+  
+  //First, set variables of general utility
   double my_L2_norm = 0.;
   QGauss<2>  quadrature_formula(2);
   FEValues<2> fe_values (fe, quadrature_formula,
@@ -259,13 +265,15 @@ void Step3::output_results () const
   DoFHandler<2>::active_cell_iterator cell = dof_handler.begin_active();
   DoFHandler<2>::active_cell_iterator endc = dof_handler.end();
 
-  //Next, declare a vector to store the value of the numerical solution at cells quadrature points
+  //Next, declare a vector to store the numerical solution
+  //evaluated at quadrature points of all cells
+  //Q_solution is later filled cell-by-cell via the get_function_values
   std::vector<double> Q_solution(n_q_points);
 
   for (; cell!=endc; ++cell){
 
       fe_values.reinit (cell);
-      //The following function call maps the solution vector into the cell Q_points
+      //evaluate Q_solution at the Q_points of the cell
       fe_values.get_function_values(solution,Q_solution);
 
       for (unsigned int q_index=0; q_index<n_q_points; ++q_index){
@@ -276,15 +284,16 @@ void Step3::output_results () const
 
   }
 
-  //normalize the L2_norm through a form factor
-  my_L2_norm = sqrt(my_L2_norm);
-  std::cout << "My_L2_norm: " << my_L2_norm << std::endl;
+  //I choose as the normalization factor the "volume" of the system
+  norm_factor = 1./16;
+  my_L2_norm = sqrt(my_L2_norm*norm_factor);
+  std::cout << "My Quadrature_L2_norm: " << my_L2_norm << std::endl;
 
-//Her L2 norm ------
+//-------Deal.II L2 norm ------
   Vector<double> norm_vec_2;
   norm_vec_2.reinit(triangulation.n_active_cells());
   VectorTools::integrate_difference(dof_handler,solution,fp,norm_vec_2,quadrature_formula,VectorTools::NormType::L2_norm);
-  std::cout << (norm_vec_2).l2_norm() << std::endl;
+  std::cout << "Deal.II Quadrature_L2_norm: " << (norm_vec_2).l2_norm()*sqrt(norm_factor) << std::endl;
 
 }
 

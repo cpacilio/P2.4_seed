@@ -1232,6 +1232,7 @@ CMakeFiles/step-3.dir/step-3.cc.o: /home/dealii/dealii-v9.0.0/include/deal.II/do
 CMakeFiles/step-3.dir/step-3.cc.o: /home/dealii/dealii-v9.0.0/include/deal.II/dofs/dof_iterator_selector.h
 CMakeFiles/step-3.dir/step-3.cc.o: /home/dealii/dealii-v9.0.0/include/deal.II/dofs/dof_levels.h
 CMakeFiles/step-3.dir/step-3.cc.o: /home/dealii/dealii-v9.0.0/include/deal.II/dofs/dof_objects.h
+CMakeFiles/step-3.dir/step-3.cc.o: /home/dealii/dealii-v9.0.0/include/deal.II/dofs/dof_renumbering.h
 CMakeFiles/step-3.dir/step-3.cc.o: /home/dealii/dealii-v9.0.0/include/deal.II/dofs/dof_tools.h
 CMakeFiles/step-3.dir/step-3.cc.o: /home/dealii/dealii-v9.0.0/include/deal.II/dofs/function_map.h
 CMakeFiles/step-3.dir/step-3.cc.o: /home/dealii/dealii-v9.0.0/include/deal.II/dofs/number_cache.h
