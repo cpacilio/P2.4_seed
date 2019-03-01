@@ -30,12 +30,15 @@
 
 using namespace dealii;
 
+
+//Print various infos about the triangulation
 void print_info(const Triangulation<2> &triangulation){
 	std::cout << "N_levels: " << triangulation.n_levels() << "\t";
 	std::cout << "N_cells: " << triangulation.n_cells() << "\t";
 	std::cout << "N_active_cells: " << triangulation.n_active_cells() << std::endl;
 }
 
+//implement a third grid with the shape of an hyper_ball
 void third_grid(){
 	Triangulation<2> triangulation;
 
@@ -82,6 +85,7 @@ void second_grid ()
   GridGenerator::hyper_shell (triangulation,
                               center, inner_radius, outer_radius,
                               10);
+//-------comment unnecessary lines ------
   //triangulation.set_all_manifold_ids(0);
   //const SphericalManifold<2> manifold_description(center);
   //triangulation.set_manifold (0, manifold_description);
@@ -118,6 +122,7 @@ void second_grid ()
 
   std::cout << "Grid written to grid-2.svg" << std::endl;
 
+//------ comment unnecessary lines ------
   //triangulation.set_manifold (0);
 
   print_info(triangulation);
