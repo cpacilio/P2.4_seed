@@ -1,7 +1,7 @@
 MESSAGE(
 "###
 #
-#  Project  step-3  set up with  deal.II-9.0.0  found at
+#  Project  step-3_v2  set up with  deal.II-9.0.0  found at
 #      /home/dealii/dealii-v9.0.0
 #
 #  CMAKE_BUILD_TYPE:          Debug

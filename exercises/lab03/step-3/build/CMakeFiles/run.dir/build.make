@@ -53,9 +53,9 @@ CMAKE_BINARY_DIR = /home/dealii/P2.4_seed/exercises/lab03/step-3/build
 # Include the progress variables for this target.
 include CMakeFiles/run.dir/progress.make
 
-CMakeFiles/run: step-3
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/dealii/P2.4_seed/exercises/lab03/step-3/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Run step-3 with Debug configuration"
-	./step-3
+CMakeFiles/run: step-3_v2
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/dealii/P2.4_seed/exercises/lab03/step-3/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Run step-3_v2 with Debug configuration"
+	./step-3_v2
 
 run: CMakeFiles/run
 run: CMakeFiles/run.dir/build.make

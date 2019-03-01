@@ -113,7 +113,7 @@ CMAKE_OBJCOPY:FILEPATH=/usr/bin/objcopy
 CMAKE_OBJDUMP:FILEPATH=/usr/bin/objdump
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=step-3
+CMAKE_PROJECT_NAME:STATIC=step-3_v2
 
 //Path to a program.
 CMAKE_RANLIB:FILEPATH=/usr/bin/ranlib
@@ -175,6 +175,12 @@ step-3_BINARY_DIR:STATIC=/home/dealii/P2.4_seed/exercises/lab03/step-3/build
 
 //Value Computed by CMake
 step-3_SOURCE_DIR:STATIC=/home/dealii/P2.4_seed/exercises/lab03/step-3
+
+//Value Computed by CMake
+step-3_v2_BINARY_DIR:STATIC=/home/dealii/P2.4_seed/exercises/lab03/step-3/build
+
+//Value Computed by CMake
+step-3_v2_SOURCE_DIR:STATIC=/home/dealii/P2.4_seed/exercises/lab03/step-3
 
 
 ########################

@@ -23,7 +23,6 @@
 #include <deal.II/grid/tria.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/grid_out.h>
 
 #include <deal.II/grid/tria_accessor.h>
 #include <deal.II/grid/tria_iterator.h>
@@ -57,13 +56,6 @@
 //to define functions
 #include <deal.II/base/function_parser.h>
 
-//for dynamical mesh refinement
-#include <deal.II/grid/grid_refinement.h>
-#include <deal.II/lac/affine_constraints.h>
-#include <deal.II/numerics/error_estimator.h>
-
-
-#define CYCLES 8
 using namespace dealii;
 
 //I modify this file along the following lines:
@@ -83,18 +75,16 @@ public:
 
 
 private:
-  void refine_grid ();
+  void make_grid ();
   void setup_system ();
   void assemble_system (const FunctionParser<2>& Dfp);
   void solve (const FunctionParser<2>& fp);
-  void output_results (const unisgned int cycle) const;
+  void output_results () const;
   void error_norms (const FunctionParser<2>& fp) const;
 
   Triangulation<2>     triangulation;
   FE_Q<2>              fe;
   DoFHandler<2>        dof_handler;
-
-  AffineConstraints<double> constraints;
 
   SparsityPattern      sparsity_pattern;
   SparseMatrix<double> system_matrix;
@@ -113,21 +103,14 @@ Step3::Step3 ()
 
 
 
-void Step3::refine_grid ()
+void Step3::make_grid ()
 {
-  Vector<float> error_per_cell(triangulation.n_active_cells());
+  GridGenerator::hyper_cube (triangulation, -1, 1);
+  triangulation.refine_global (5);
 
-  KellyErrorEstimator<2>::estimate
-	(
-	dof_handler,QGauss<2>(2),
-	std::map<types::boundary_id,
-	const Function<2>*>(),solution,
-	error_per_cell
-	);
-
-  GridRefinement::refine_and_coarsen_fixed_number
-	(triangulation,error_per_cell,0.3,0.03);
-  triangulation.execute_coarsening_and_refinement();
+  std::cout << "Number of active cells: "
+            << triangulation.n_active_cells()
+            << std::endl;
 }
 
 
@@ -143,21 +126,14 @@ void Step3::setup_system ()
   //re-enumerate the dofs
   DoFRenumbering::Cuthill_McKee(dof_handler);
 
-  solution.reinit (dof_handler.n_dofs());
-  system_rhs.reinit (dof_handler.n_dofs());
-
-  //clear the constraints and reinit them
-  constarints.clear();
-  DoFTolls::make_hanging_node_constraints(dof_handler,constraimts);
-  VectorTools::interpolate_boundary_values(dof_handler,0,
-		Function::ZeroFunction<2>(),constraints);
-  constraints.close();
-
   DynamicSparsityPattern dsp(dof_handler.n_dofs());
-  DoFTools::make_sparsity_pattern (dof_handler, dsp, constraints);
+  DoFTools::make_sparsity_pattern (dof_handler, dsp);
   sparsity_pattern.copy_from(dsp);
 
   system_matrix.reinit (sparsity_pattern);
+
+  solution.reinit (dof_handler.n_dofs());
+  system_rhs.reinit (dof_handler.n_dofs());
   
 }
 
@@ -191,6 +167,8 @@ void Step3::assemble_system (const FunctionParser<2>& Dfp)
         {
 	//map the local Q_point
 	const auto& xx = fe_values.quadrature_point(q_index);
+	//function on the RHS at the local Q_point
+	//const double FF = 40*M_PI*M_PI*sin(2*M_PI*xx[0])*sin(6*M_PI*xx[1]);     
   
 	for (unsigned int i=0; i<dofs_per_cell; ++i){
             cell_rhs(i) += (fe_values.shape_value (i, q_index) *
@@ -202,12 +180,27 @@ void Step3::assemble_system (const FunctionParser<2>& Dfp)
                                    fe_values.JxW (q_index));
 	}
       }
-   }
 
       cell->get_dof_indices (local_dof_indices);
 
-  constraints.distribute_local_to_global(cell_matrix, cell_rhs,
-			local_dof_indices,system_matrix,system_rhs);
+      for (unsigned int i=0; i<dofs_per_cell; ++i){
+	system_rhs(local_dof_indices[i]) += cell_rhs(i);
+        for (unsigned int j=0; j<dofs_per_cell; ++j)
+          system_matrix.add (local_dof_indices[i],
+                             local_dof_indices[j],
+                             cell_matrix(i,j));
+      	}
+
+  std::map<types::global_dof_index,double> boundary_values;
+  VectorTools::interpolate_boundary_values (dof_handler,
+                                            0,
+                                            ZeroFunction<2>(),
+                                            boundary_values);
+  MatrixTools::apply_boundary_values (boundary_values,
+                                      system_matrix,
+                                      solution,
+                                      system_rhs);
+  }
 }
 
 
@@ -224,15 +217,12 @@ void Step3::solve (const FunctionParser<2>& fp)
   exact_sol.reinit(dof_handler.n_dofs());
   VectorTools::interpolate(dof_handler,fp,exact_sol);
 
-  constraints.distribute(solution);
-
 }
 
 
 
-void Step3::output_results (const unsigned int cycle) const
+void Step3::output_results () const
 {
-  if(cycle!=CYCLES) return;
 
   //plot numerical and exact solutions
   DataOut<2> data_out;
@@ -303,6 +293,7 @@ void Step3::error_norms (const FunctionParser<2>& fp) const {
 
 void Step3::run ()
 {
+
   //initialize RHS function...
   std::string variables = "x,y";
   std::map<std::string,double> constants;
@@ -316,20 +307,11 @@ void Step3::run ()
   FunctionParser<2> Dfp(1);
   Dfp.initialize(variables, expression, constants);
 
-  for(unsigned int cycle = 0; cycle < CYCLES; ++cycle){
-        if(cycle==0){
-                GridGenerator::hyper_cube (triangulation, -1, 1);
-                triangulation.refine_global (1);
-        }
-        else
-                refine_grid();
-
-   setup_system ();
-   assemble_system (Dfp);
-   solve (fp);
-   output_results (cycle);
-   //error_norms(fp);
-  }
+  make_grid ();
+  setup_system ();
+  assemble_system (Dfp);
+  solve (fp);
+  output_results ();
   error_norms(fp);
 }
 

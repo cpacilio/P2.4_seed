@@ -56,17 +56,6 @@ CMAKE_BINARY_DIR = /home/dealii/P2.4_seed/exercises/lab03/step-3/build
 #=============================================================================
 # Targets provided globally by CMake.
 
-# Special rule for the target edit_cache
-edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
-	/usr/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
-.PHONY : edit_cache
-
-# Special rule for the target edit_cache
-edit_cache/fast: edit_cache
-
-.PHONY : edit_cache/fast
-
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
@@ -77,6 +66,17 @@ rebuild_cache:
 rebuild_cache/fast: rebuild_cache
 
 .PHONY : rebuild_cache/fast
+
+# Special rule for the target edit_cache
+edit_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
+	/usr/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+.PHONY : edit_cache
+
+# Special rule for the target edit_cache
+edit_cache/fast: edit_cache
+
+.PHONY : edit_cache/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -163,6 +163,19 @@ runclean/fast:
 .PHONY : runclean/fast
 
 #=============================================================================
+# Target rules for targets named step-3_v2
+
+# Build rule for target.
+step-3_v2: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 step-3_v2
+.PHONY : step-3_v2
+
+# fast build rule for target.
+step-3_v2/fast:
+	$(MAKE) -f CMakeFiles/step-3_v2.dir/build.make CMakeFiles/step-3_v2.dir/build
+.PHONY : step-3_v2/fast
+
+#=============================================================================
 # Target rules for targets named debug
 
 # Build rule for target.
@@ -174,19 +187,6 @@ debug: cmake_check_build_system
 debug/fast:
 	$(MAKE) -f CMakeFiles/debug.dir/build.make CMakeFiles/debug.dir/build
 .PHONY : debug/fast
-
-#=============================================================================
-# Target rules for targets named step-3
-
-# Build rule for target.
-step-3: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 step-3
-.PHONY : step-3
-
-# fast build rule for target.
-step-3/fast:
-	$(MAKE) -f CMakeFiles/step-3.dir/build.make CMakeFiles/step-3.dir/build
-.PHONY : step-3/fast
 
 #=============================================================================
 # Target rules for targets named run
@@ -214,32 +214,32 @@ release/fast:
 	$(MAKE) -f CMakeFiles/release.dir/build.make CMakeFiles/release.dir/build
 .PHONY : release/fast
 
-step-3.o: step-3.cc.o
+step-3_v2.o: step-3_v2.cc.o
 
-.PHONY : step-3.o
+.PHONY : step-3_v2.o
 
 # target to build an object file
-step-3.cc.o:
-	$(MAKE) -f CMakeFiles/step-3.dir/build.make CMakeFiles/step-3.dir/step-3.cc.o
-.PHONY : step-3.cc.o
+step-3_v2.cc.o:
+	$(MAKE) -f CMakeFiles/step-3_v2.dir/build.make CMakeFiles/step-3_v2.dir/step-3_v2.cc.o
+.PHONY : step-3_v2.cc.o
 
-step-3.i: step-3.cc.i
+step-3_v2.i: step-3_v2.cc.i
 
-.PHONY : step-3.i
+.PHONY : step-3_v2.i
 
 # target to preprocess a source file
-step-3.cc.i:
-	$(MAKE) -f CMakeFiles/step-3.dir/build.make CMakeFiles/step-3.dir/step-3.cc.i
-.PHONY : step-3.cc.i
+step-3_v2.cc.i:
+	$(MAKE) -f CMakeFiles/step-3_v2.dir/build.make CMakeFiles/step-3_v2.dir/step-3_v2.cc.i
+.PHONY : step-3_v2.cc.i
 
-step-3.s: step-3.cc.s
+step-3_v2.s: step-3_v2.cc.s
 
-.PHONY : step-3.s
+.PHONY : step-3_v2.s
 
 # target to generate assembly for a file
-step-3.cc.s:
-	$(MAKE) -f CMakeFiles/step-3.dir/build.make CMakeFiles/step-3.dir/step-3.cc.s
-.PHONY : step-3.cc.s
+step-3_v2.cc.s:
+	$(MAKE) -f CMakeFiles/step-3_v2.dir/build.make CMakeFiles/step-3_v2.dir/step-3_v2.cc.s
+.PHONY : step-3_v2.cc.s
 
 # Help Target
 help:
@@ -247,19 +247,19 @@ help:
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... depend"
-	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... info"
 	@echo "... strip_comments"
 	@echo "... distclean"
 	@echo "... runclean"
+	@echo "... edit_cache"
+	@echo "... step-3_v2"
 	@echo "... debug"
-	@echo "... step-3"
 	@echo "... run"
 	@echo "... release"
-	@echo "... step-3.o"
-	@echo "... step-3.i"
-	@echo "... step-3.s"
+	@echo "... step-3_v2.o"
+	@echo "... step-3_v2.i"
+	@echo "... step-3_v2.s"
 .PHONY : help
 
 

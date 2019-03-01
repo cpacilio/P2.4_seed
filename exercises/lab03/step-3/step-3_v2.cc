@@ -56,12 +56,11 @@
 
 //to define functions
 #include <deal.II/base/function_parser.h>
-
+#include <deal.II/base/function_lib.h>
 //for dynamical mesh refinement
 #include <deal.II/grid/grid_refinement.h>
-#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/numerics/error_estimator.h>
-
+#include <deal.II/lac/constraint_matrix.h>
 
 #define CYCLES 8
 using namespace dealii;
@@ -87,14 +86,14 @@ private:
   void setup_system ();
   void assemble_system (const FunctionParser<2>& Dfp);
   void solve (const FunctionParser<2>& fp);
-  void output_results (const unisgned int cycle) const;
+  void output_results (const unsigned int cycle) const;
   void error_norms (const FunctionParser<2>& fp) const;
 
   Triangulation<2>     triangulation;
   FE_Q<2>              fe;
   DoFHandler<2>        dof_handler;
 
-  AffineConstraints<double> constraints;
+  ConstraintMatrix     constraints;
 
   SparsityPattern      sparsity_pattern;
   SparseMatrix<double> system_matrix;
@@ -107,7 +106,7 @@ private:
 
 Step3::Step3 ()
   :
-  fe (1),
+  fe (2),
   dof_handler (triangulation)
 {}
 
@@ -119,9 +118,8 @@ void Step3::refine_grid ()
 
   KellyErrorEstimator<2>::estimate
 	(
-	dof_handler,QGauss<2>(2),
-	std::map<types::boundary_id,
-	const Function<2>*>(),solution,
+	dof_handler,QGauss<1>(3),
+	typename FunctionMap<2>::type(),solution,
 	error_per_cell
 	);
 
@@ -147,14 +145,14 @@ void Step3::setup_system ()
   system_rhs.reinit (dof_handler.n_dofs());
 
   //clear the constraints and reinit them
-  constarints.clear();
-  DoFTolls::make_hanging_node_constraints(dof_handler,constraimts);
+  constraints.clear();
+  DoFTools::make_hanging_node_constraints(dof_handler,constraints);
   VectorTools::interpolate_boundary_values(dof_handler,0,
-		Function::ZeroFunction<2>(),constraints);
+		ZeroFunction<2>(),constraints);
   constraints.close();
 
   DynamicSparsityPattern dsp(dof_handler.n_dofs());
-  DoFTools::make_sparsity_pattern (dof_handler, dsp, constraints);
+  DoFTools::make_sparsity_pattern (dof_handler, dsp, constraints, false);
   sparsity_pattern.copy_from(dsp);
 
   system_matrix.reinit (sparsity_pattern);
@@ -165,7 +163,7 @@ void Step3::setup_system ()
 
 void Step3::assemble_system (const FunctionParser<2>& Dfp)
 {
-  QGauss<2>  quadrature_formula(2);
+  QGauss<2>  quadrature_formula(3);
   //update_quadrature_points to use them as function arguments
   FEValues<2> fe_values (fe, quadrature_formula,
                          update_values | update_gradients | update_JxW_values | update_quadrature_points);
@@ -202,12 +200,11 @@ void Step3::assemble_system (const FunctionParser<2>& Dfp)
                                    fe_values.JxW (q_index));
 	}
       }
-   }
 
       cell->get_dof_indices (local_dof_indices);
-
-  constraints.distribute_local_to_global(cell_matrix, cell_rhs,
+      constraints.distribute_local_to_global(cell_matrix, cell_rhs,
 			local_dof_indices,system_matrix,system_rhs);
+  }
 }
 
 
@@ -262,7 +259,7 @@ void Step3::error_norms (const FunctionParser<2>& fp) const {
 
   //First, set variables of general utility
   double my_L2_norm = 0.;
-  QGauss<2>  quadrature_formula(2);
+  QGauss<2>  quadrature_formula(3);
   FEValues<2> fe_values (fe, quadrature_formula,
                          update_values | update_JxW_values | update_quadrature_points);
 
@@ -319,18 +316,21 @@ void Step3::run ()
   for(unsigned int cycle = 0; cycle < CYCLES; ++cycle){
         if(cycle==0){
                 GridGenerator::hyper_cube (triangulation, -1, 1);
-                triangulation.refine_global (1);
+                triangulation.refine_global (2);
         }
         else
                 refine_grid();
+
+   std::cout << "Cycle " << cycle << std::endl;
+   std::cout << "Number of active cells: " << triangulation.n_active_cells() << std::endl;
 
    setup_system ();
    assemble_system (Dfp);
    solve (fp);
    output_results (cycle);
-   //error_norms(fp);
+   error_norms(fp);
   }
-  error_norms(fp);
+  //error_norms(fp);
 }
 
 

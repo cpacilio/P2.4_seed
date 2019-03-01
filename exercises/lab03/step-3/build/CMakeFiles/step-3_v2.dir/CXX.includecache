@@ -6,12 +6,14 @@
 
 #IncludeRegexTransform: 
 
-/home/dealii/P2.4_seed/exercises/lab03/step-3/step-3.cc
+/home/dealii/P2.4_seed/exercises/lab03/step-3/step-3_v2.cc
 deal.II/grid/tria.h
 -
 deal.II/dofs/dof_handler.h
 -
 deal.II/grid/grid_generator.h
+-
+deal.II/grid/grid_out.h
 -
 deal.II/grid/tria_accessor.h
 -
@@ -47,8 +49,6 @@ deal.II/lac/solver_cg.h
 -
 deal.II/lac/precondition.h
 -
-deal.II/lac/affine_constraints.h
--
 deal.II/numerics/data_out.h
 -
 fstream
@@ -58,6 +58,14 @@ iostream
 math.h
 -
 deal.II/base/function_parser.h
+-
+deal.II/base/function_lib.h
+-
+deal.II/grid/grid_refinement.h
+-
+deal.II/numerics/error_estimator.h
+-
+deal.II/lac/constraint_matrix.h
 -
 
 /home/dealii/dealii-v9.0.0/include/deal.II/base/aligned_vector.h
@@ -198,6 +206,18 @@ deal.II/base/point.h
 functional
 -
 vector
+-
+
+/home/dealii/dealii-v9.0.0/include/deal.II/base/function_lib.h
+deal.II/base/config.h
+-
+deal.II/base/function.h
+-
+deal.II/base/point.h
+-
+deal.II/base/table.h
+-
+array
 -
 
 /home/dealii/dealii-v9.0.0/include/deal.II/base/function_parser.h
@@ -14976,6 +14996,26 @@ array
 map
 -
 
+/home/dealii/dealii-v9.0.0/include/deal.II/grid/grid_out.h
+deal.II/base/config.h
+-
+deal.II/base/exceptions.h
+-
+deal.II/base/point.h
+-
+deal.II/base/data_out_base.h
+-
+string
+-
+
+/home/dealii/dealii-v9.0.0/include/deal.II/grid/grid_refinement.h
+deal.II/base/config.h
+-
+deal.II/base/exceptions.h
+-
+limits
+-
+
 /home/dealii/dealii-v9.0.0/include/deal.II/grid/tria.h
 deal.II/base/config.h
 -
@@ -15694,6 +15734,20 @@ boost/any.hpp
 vector
 -
 string
+-
+
+/home/dealii/dealii-v9.0.0/include/deal.II/numerics/error_estimator.h
+deal.II/base/config.h
+-
+deal.II/base/exceptions.h
+-
+deal.II/base/function.h
+-
+deal.II/dofs/function_map.h
+-
+deal.II/fe/component_mask.h
+-
+map
 -
 
 /home/dealii/dealii-v9.0.0/include/deal.II/numerics/matrix_tools.h
