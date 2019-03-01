@@ -65,7 +65,6 @@ using namespace dealii;
 //Moreover, I decided to implement by myself a quadrature-weighted L2_norm
 //and I compared my result with the one from the built-in function "integrate_difference"
 
-//all the norms are computed in the function error_norms()
 class Step3
 {
 public:
@@ -77,10 +76,10 @@ public:
 private:
   void make_grid ();
   void setup_system ();
-  void assemble_system (const FunctionParser<2>& Dfp);
-  void solve (const FunctionParser<2>& fp);
+  void assemble_system ();
+  void solve (FunctionParser<2>& fp);
   void output_results () const;
-  void error_norms (const FunctionParser<2>& fp) const;
+  void error_norms (FunctionParser<2>& fp) const;
 
   Triangulation<2>     triangulation;
   FE_Q<2>              fe;
@@ -91,7 +90,7 @@ private:
 
   Vector<double>       solution;
   Vector<double>       system_rhs;
-  Vector<double>       exact_sol;
+  mutable Vector<double>       exact_sol;
 };
 
 
@@ -139,7 +138,7 @@ void Step3::setup_system ()
 
 
 
-void Step3::assemble_system (const FunctionParser<2>& Dfp)
+void Step3::assemble_system ()
 {
   QGauss<2>  quadrature_formula(2);
   //update_quadrature_points to use them as function arguments
@@ -168,11 +167,11 @@ void Step3::assemble_system (const FunctionParser<2>& Dfp)
 	//map the local Q_point
 	const auto& xx = fe_values.quadrature_point(q_index);
 	//function on the RHS at the local Q_point
-	//const double FF = 40*M_PI*M_PI*sin(2*M_PI*xx[0])*sin(6*M_PI*xx[1]);     
+	const double FF = 40*M_PI*M_PI*sin(2*M_PI*xx[0])*sin(6*M_PI*xx[1]);     
   
 	for (unsigned int i=0; i<dofs_per_cell; ++i){
             cell_rhs(i) += (fe_values.shape_value (i, q_index) *
-                            Dfp.value(xx)*
+                            FF*
                             fe_values.JxW (q_index));
             for (unsigned int j=0; j<dofs_per_cell; ++j)
               cell_matrix(i,j) += (fe_values.shape_grad (i, q_index) *
@@ -205,7 +204,7 @@ void Step3::assemble_system (const FunctionParser<2>& Dfp)
 
 
 
-void Step3::solve (const FunctionParser<2>& fp)
+void Step3::solve (FunctionParser<2>& fp)
 {
   SolverControl           solver_control (1000, 1e-12);
   SolverCG<>              solver (solver_control);
@@ -224,7 +223,13 @@ void Step3::solve (const FunctionParser<2>& fp)
 void Step3::output_results () const
 {
 
-  //plot numerical and exact solutions
+//--------compute exact solution---------
+
+  //interpolate function
+  //exact_sol.reinit(dof_handler.n_dofs());
+  //VectorTools::interpolate(dof_handler,fp,exact_sol);
+
+  //plot the two functions
   DataOut<2> data_out;
   data_out.attach_dof_handler (dof_handler);
   data_out.add_data_vector (solution, "solution");
@@ -235,9 +240,12 @@ void Step3::output_results () const
   std::ofstream output ("solution.vtk");
   data_out.write_vtk (output);
 
+//---- call the error norms -----
+
+  //error_norms(fp);
 }
 
-void Step3::error_norms (const FunctionParser<2>& fp) const {
+void Step3::error_norms (FunctionParser<2>& fp) const {
 //compute error norms
   Vector<double>  norm_vec(exact_sol);
   norm_vec-= solution; //sol - exact_sol
@@ -294,22 +302,17 @@ void Step3::error_norms (const FunctionParser<2>& fp) const {
 void Step3::run ()
 {
 
-  //initialize RHS function...
+  //initialize RHS function
   std::string variables = "x,y";
   std::map<std::string,double> constants;
   constants["pi"] = numbers::PI;
   std::string expression = "sin(2*pi*x)*sin(6*pi*y)";
   FunctionParser<2> fp(1);
   fp.initialize(variables, expression, constants);
-  
-  //...and its (minus-the-)laplacian
-  expression = "40*pi*pi*sin(2*pi*x)*sin(6*pi*y)";
-  FunctionParser<2> Dfp(1);
-  Dfp.initialize(variables, expression, constants);
 
   make_grid ();
   setup_system ();
-  assemble_system (Dfp);
+  assemble_system ();
   solve (fp);
   output_results ();
   error_norms(fp);
