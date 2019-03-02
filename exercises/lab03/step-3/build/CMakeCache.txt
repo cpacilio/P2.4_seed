@@ -177,6 +177,12 @@ step-3_BINARY_DIR:STATIC=/home/dealii/P2.4_seed/exercises/lab03/step-3/build
 step-3_SOURCE_DIR:STATIC=/home/dealii/P2.4_seed/exercises/lab03/step-3
 
 //Value Computed by CMake
+step-3_v1_BINARY_DIR:STATIC=/home/dealii/P2.4_seed/exercises/lab03/step-3/build
+
+//Value Computed by CMake
+step-3_v1_SOURCE_DIR:STATIC=/home/dealii/P2.4_seed/exercises/lab03/step-3
+
+//Value Computed by CMake
 step-3_v2_BINARY_DIR:STATIC=/home/dealii/P2.4_seed/exercises/lab03/step-3/build
 
 //Value Computed by CMake

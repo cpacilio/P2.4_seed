@@ -56,6 +56,10 @@
 //to define functions
 #include <deal.II/base/function_parser.h>
 
+#define DIM 2
+//degree of the polynomial approximation
+#define DEGQ 3
+
 using namespace dealii;
 
 //I modify this file along the following lines:
@@ -77,14 +81,14 @@ public:
 private:
   void make_grid ();
   void setup_system ();
-  void assemble_system (const FunctionParser<2>& Dfp);
-  void solve (const FunctionParser<2>& fp);
+  void assemble_system (const FunctionParser<DIM>& Dfp);
+  void solve (const FunctionParser<DIM>& fp);
   void output_results () const;
-  void error_norms (const FunctionParser<2>& fp) const;
+  void error_norms (const FunctionParser<DIM>& fp) const;
 
-  Triangulation<2>     triangulation;
-  FE_Q<2>              fe;
-  DoFHandler<2>        dof_handler;
+  Triangulation<DIM>     triangulation;
+  FE_Q<DIM>              fe;
+  DoFHandler<DIM>        dof_handler;
 
   SparsityPattern      sparsity_pattern;
   SparseMatrix<double> system_matrix;
@@ -97,7 +101,7 @@ private:
 
 Step3::Step3 ()
   :
-  fe (1),
+  fe (DEGQ-1),
   dof_handler (triangulation)
 {}
 
@@ -139,11 +143,11 @@ void Step3::setup_system ()
 
 
 
-void Step3::assemble_system (const FunctionParser<2>& Dfp)
+void Step3::assemble_system (const FunctionParser<DIM>& Dfp)
 {
-  QGauss<2>  quadrature_formula(2);
+  QGauss<DIM>  quadrature_formula(DEGQ);
   //update_quadrature_points to use them as function arguments
-  FEValues<2> fe_values (fe, quadrature_formula,
+  FEValues<DIM> fe_values (fe, quadrature_formula,
                          update_values | update_gradients | update_JxW_values | update_quadrature_points);
 
   const unsigned int   dofs_per_cell = fe.dofs_per_cell;
@@ -154,8 +158,8 @@ void Step3::assemble_system (const FunctionParser<2>& Dfp)
 
   std::vector<types::global_dof_index> local_dof_indices (dofs_per_cell);
 
-  DoFHandler<2>::active_cell_iterator cell = dof_handler.begin_active();
-  DoFHandler<2>::active_cell_iterator endc = dof_handler.end();
+  DoFHandler<DIM>::active_cell_iterator cell = dof_handler.begin_active();
+  DoFHandler<DIM>::active_cell_iterator endc = dof_handler.end();
   for (; cell!=endc; ++cell)
     {
       fe_values.reinit (cell);
@@ -166,9 +170,7 @@ void Step3::assemble_system (const FunctionParser<2>& Dfp)
       for (unsigned int q_index=0; q_index<n_q_points; ++q_index)
         {
 	//map the local Q_point
-	const auto& xx = fe_values.quadrature_point(q_index);
-	//function on the RHS at the local Q_point
-	//const double FF = 40*M_PI*M_PI*sin(2*M_PI*xx[0])*sin(6*M_PI*xx[1]);     
+	const auto& xx = fe_values.quadrature_point(q_index);     
   
 	for (unsigned int i=0; i<dofs_per_cell; ++i){
             cell_rhs(i) += (fe_values.shape_value (i, q_index) *
@@ -205,7 +207,7 @@ void Step3::assemble_system (const FunctionParser<2>& Dfp)
 
 
 
-void Step3::solve (const FunctionParser<2>& fp)
+void Step3::solve (const FunctionParser<DIM>& fp)
 {
   SolverControl           solver_control (1000, 1e-12);
   SolverCG<>              solver (solver_control);
@@ -225,7 +227,7 @@ void Step3::output_results () const
 {
 
   //plot numerical and exact solutions
-  DataOut<2> data_out;
+  DataOut<DIM> data_out;
   data_out.attach_dof_handler (dof_handler);
   data_out.add_data_vector (solution, "solution");
   data_out.add_data_vector (exact_sol, "exact_sol");
@@ -237,7 +239,7 @@ void Step3::output_results () const
 
 }
 
-void Step3::error_norms (const FunctionParser<2>& fp) const {
+void Step3::error_norms (const FunctionParser<DIM>& fp) const {
 //compute error norms
   Vector<double>  norm_vec(exact_sol);
   norm_vec-= solution; //sol - exact_sol
@@ -252,13 +254,13 @@ void Step3::error_norms (const FunctionParser<2>& fp) const {
 
   //First, set variables of general utility
   double my_L2_norm = 0.;
-  QGauss<2>  quadrature_formula(2);
-  FEValues<2> fe_values (fe, quadrature_formula,
+  QGauss<DIM>  quadrature_formula(DEGQ);
+  FEValues<DIM> fe_values (fe, quadrature_formula,
                          update_values | update_JxW_values | update_quadrature_points);
 
   const unsigned int n_q_points = quadrature_formula.size();
-  DoFHandler<2>::active_cell_iterator cell = dof_handler.begin_active();
-  DoFHandler<2>::active_cell_iterator endc = dof_handler.end();
+  DoFHandler<DIM>::active_cell_iterator cell = dof_handler.begin_active();
+  DoFHandler<DIM>::active_cell_iterator endc = dof_handler.end();
 
   //Next, declare a vector to store the numerical solution
   //evaluated at quadrature points of all cells
@@ -299,12 +301,12 @@ void Step3::run ()
   std::map<std::string,double> constants;
   constants["pi"] = numbers::PI;
   std::string expression = "sin(2*pi*x)*sin(6*pi*y)";
-  FunctionParser<2> fp(1);
+  FunctionParser<DIM> fp(1);
   fp.initialize(variables, expression, constants);
   
   //...and its (minus-the-)laplacian
   expression = "40*pi*pi*sin(2*pi*x)*sin(6*pi*y)";
-  FunctionParser<2> Dfp(1);
+  FunctionParser<DIM> Dfp(1);
   Dfp.initialize(variables, expression, constants);
 
   make_grid ();

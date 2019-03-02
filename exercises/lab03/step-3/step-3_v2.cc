@@ -57,14 +57,22 @@
 //to define functions
 #include <deal.II/base/function_parser.h>
 #include <deal.II/base/function_lib.h>
+//---------- V2 NOTES ----------
 //for dynamical mesh refinement
+//BIG NOTE: in previous versions:
+//constraint_matrix was called afiine_constraints
+//and same inside the code
 #include <deal.II/grid/grid_refinement.h>
 #include <deal.II/numerics/error_estimator.h>
 #include <deal.II/lac/constraint_matrix.h>
 
+#define DIM 2
 #define CYCLES 8
+#define DEGQ 3
+#define INIT 2
 using namespace dealii;
 
+//---------- V1 NOTES ----------
 //I modify this file along the following lines:
 //1. the RHS of the EOM becomes sin(2*pi*x)sin(6*pi*y)
 //2. estimate the error of the numerical solution w.r.t. to exact one with varios norms
@@ -84,14 +92,14 @@ public:
 private:
   void refine_grid ();
   void setup_system ();
-  void assemble_system (const FunctionParser<2>& Dfp);
-  void solve (const FunctionParser<2>& fp);
+  void assemble_system (const FunctionParser<DIM>& Dfp);
+  void solve (const FunctionParser<DIM>& fp);
   void output_results (const unsigned int cycle) const;
-  void error_norms (const FunctionParser<2>& fp) const;
+  void error_norms (const FunctionParser<DIM>& fp) const;
 
-  Triangulation<2>     triangulation;
-  FE_Q<2>              fe;
-  DoFHandler<2>        dof_handler;
+  Triangulation<DIM>     triangulation;
+  FE_Q<DIM>              fe;
+  DoFHandler<DIM>        dof_handler;
 
   ConstraintMatrix     constraints;
 
@@ -106,7 +114,7 @@ private:
 
 Step3::Step3 ()
   :
-  fe (2),
+  fe (DEGQ-1),
   dof_handler (triangulation)
 {}
 
@@ -116,10 +124,10 @@ void Step3::refine_grid ()
 {
   Vector<float> error_per_cell(triangulation.n_active_cells());
 
-  KellyErrorEstimator<2>::estimate
+  KellyErrorEstimator<DIM>::estimate
 	(
-	dof_handler,QGauss<1>(3),
-	typename FunctionMap<2>::type(),solution,
+	dof_handler,QGauss<DIM-1>(DEGQ),
+	typename FunctionMap<DIM>::type(),solution,
 	error_per_cell
 	);
 
@@ -148,7 +156,7 @@ void Step3::setup_system ()
   constraints.clear();
   DoFTools::make_hanging_node_constraints(dof_handler,constraints);
   VectorTools::interpolate_boundary_values(dof_handler,0,
-		ZeroFunction<2>(),constraints);
+		ZeroFunction<DIM>(),constraints);
   constraints.close();
 
   DynamicSparsityPattern dsp(dof_handler.n_dofs());
@@ -161,11 +169,11 @@ void Step3::setup_system ()
 
 
 
-void Step3::assemble_system (const FunctionParser<2>& Dfp)
+void Step3::assemble_system (const FunctionParser<DIM>& Dfp)
 {
-  QGauss<2>  quadrature_formula(3);
+  QGauss<DIM>  quadrature_formula(DEGQ);
   //update_quadrature_points to use them as function arguments
-  FEValues<2> fe_values (fe, quadrature_formula,
+  FEValues<DIM> fe_values (fe, quadrature_formula,
                          update_values | update_gradients | update_JxW_values | update_quadrature_points);
 
   const unsigned int   dofs_per_cell = fe.dofs_per_cell;
@@ -176,8 +184,8 @@ void Step3::assemble_system (const FunctionParser<2>& Dfp)
 
   std::vector<types::global_dof_index> local_dof_indices (dofs_per_cell);
 
-  DoFHandler<2>::active_cell_iterator cell = dof_handler.begin_active();
-  DoFHandler<2>::active_cell_iterator endc = dof_handler.end();
+  DoFHandler<DIM>::active_cell_iterator cell = dof_handler.begin_active();
+  DoFHandler<DIM>::active_cell_iterator endc = dof_handler.end();
   for (; cell!=endc; ++cell)
     {
       fe_values.reinit (cell);
@@ -209,7 +217,7 @@ void Step3::assemble_system (const FunctionParser<2>& Dfp)
 
 
 
-void Step3::solve (const FunctionParser<2>& fp)
+void Step3::solve (const FunctionParser<DIM>& fp)
 {
   SolverControl           solver_control (1000, 1e-12);
   SolverCG<>              solver (solver_control);
@@ -229,22 +237,29 @@ void Step3::solve (const FunctionParser<2>& fp)
 
 void Step3::output_results (const unsigned int cycle) const
 {
-  if(cycle!=CYCLES) return;
-
+  //if you want to output only the final result
+  //if(cycle!=CYCLES-1) return;
   //plot numerical and exact solutions
-  DataOut<2> data_out;
-  data_out.attach_dof_handler (dof_handler);
-  data_out.add_data_vector (solution, "solution");
-  data_out.add_data_vector (exact_sol, "exact_sol");
+  if(cycle==CYCLES-1){
+    DataOut<DIM> data_out;
+    data_out.attach_dof_handler (dof_handler);
+    data_out.add_data_vector (solution, "solution");
+    data_out.add_data_vector (exact_sol, "exact_sol");
 
-  data_out.build_patches ();
+    data_out.build_patches ();
 
-  std::ofstream output ("solution.vtk");
-  data_out.write_vtk (output);
+    std::ofstream output ("solution.vtk");
+    data_out.write_vtk (output);
+  }
 
+  //print only the first, last and middle cycles
+  if( cycle && (cycle+1)%(CYCLES/2) ) return;
+    GridOut grid_out;
+    std::ofstream output2("grid-" + std::to_string(cycle) + ".svg");
+    grid_out.write_svg(triangulation,output2);
 }
 
-void Step3::error_norms (const FunctionParser<2>& fp) const {
+void Step3::error_norms (const FunctionParser<DIM>& fp) const {
 //compute error norms
   Vector<double>  norm_vec(exact_sol);
   norm_vec-= solution; //sol - exact_sol
@@ -259,8 +274,8 @@ void Step3::error_norms (const FunctionParser<2>& fp) const {
 
   //First, set variables of general utility
   double my_L2_norm = 0.;
-  QGauss<2>  quadrature_formula(3);
-  FEValues<2> fe_values (fe, quadrature_formula,
+  QGauss<DIM>  quadrature_formula(DEGQ);
+  FEValues<DIM> fe_values (fe, quadrature_formula,
                          update_values | update_JxW_values | update_quadrature_points);
 
   const unsigned int n_q_points = quadrature_formula.size();
@@ -305,18 +320,18 @@ void Step3::run ()
   std::map<std::string,double> constants;
   constants["pi"] = numbers::PI;
   std::string expression = "sin(2*pi*x)*sin(6*pi*y)";
-  FunctionParser<2> fp(1);
+  FunctionParser<DIM> fp(1);
   fp.initialize(variables, expression, constants);
   
   //...and its (minus-the-)laplacian
   expression = "40*pi*pi*sin(2*pi*x)*sin(6*pi*y)";
-  FunctionParser<2> Dfp(1);
+  FunctionParser<DIM> Dfp(1);
   Dfp.initialize(variables, expression, constants);
 
   for(unsigned int cycle = 0; cycle < CYCLES; ++cycle){
         if(cycle==0){
                 GridGenerator::hyper_cube (triangulation, -1, 1);
-                triangulation.refine_global (2);
+                triangulation.refine_global (INIT);
         }
         else
                 refine_grid();
@@ -328,9 +343,11 @@ void Step3::run ()
    assemble_system (Dfp);
    solve (fp);
    output_results (cycle);
-   error_norms(fp);
+   //if you want to see how error converges
+   //error_norms(fp);
   }
-  //error_norms(fp);
+  //if you want to see only final errors
+  error_norms(fp);
 }
 
 
