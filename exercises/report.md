@@ -28,4 +28,5 @@ What I did: This is an adaptove mesh version of `step-2_v1.cc`. The main changes
 - in `setup_system()`, manage the hanging node constraints via the `DpFTools::make_hanging_node_constarints` and `VectorTools::interpolate_boundary_values` tools;
 - in `run()`, refine the grid progressively across `n = CYCLES` number of steps, where `CYCLES = 8` by default.
 
-![](lab03/step-3/build/grid-0.eps)
+Here below I show the first, middle, and last step of gris refinement:
+![cycle = 0](lab03/step-3/build/grid-0.svg)
