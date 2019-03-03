@@ -19,3 +19,12 @@ I also implemented a new subroutine `error_norms(const FunctionParser<dim>& fp) 
 - via the `VectorTools::integrate_difference(...)` tool, computes the L2 norm as a weigthed sum at the quadrature points.
 
 Moreover, I repeated the last task manually, to get confidence with the various `fe_values` tools, and I verified that my manual implementation is consistent with the built-in one.
+
+## Exercise 3: Solve system with adaptive mesh
+File link: [step-3_v2.cc](lab03/step-3/step-3_v2.cc)
+
+What I did: This is an adaptove mesh version of `step-2_v1.cc`. The main changes are:
+- replace the `make_grid()` function with `refine_grid()`, which estimates the error via the `KellyErrorEstimator<dim>::estimate`, and refines the grid accordingly;
+- in `setup_system()`, manage the hanging node constraints via the `DpFTools::make_hanging_node_constarints` and `VectorTools::interpolate_boundary_values` tools;
+- in `run()`, refine the grid progressively across `n = CYCLES` number of steps, where `CYCLES = 8` by default.
+
