@@ -27,14 +27,17 @@ Here below I show a 3D visualization of the numerical solution:
 ## Exercise 3: Solve system with adaptive mesh
 File link: [step-3_v2.cc](lab03/step-3/step-3_v2.cc)
 
-What I did: This is an adaptove mesh version of `step-2_v1.cc`. The main changes are:
+What I did: This is an adaptive mesh version of `step-3_v1.cc`. The main changes are:
 - replace the `make_grid()` function with `refine_grid()`, which estimates the error via the `KellyErrorEstimator<dim>::estimate`, and refines the grid accordingly;
-- in `setup_system()`, manage the hanging node constraints via the `DpFTools::make_hanging_node_constarints` and `VectorTools::interpolate_boundary_values` tools;
+- in `setup_system()`, manage the hanging node constraints via the `DoFTools::make_hanging_node_constarints` and `VectorTools::interpolate_boundary_values` tools;
 - in `run()`, refine the grid progressively across `n = CYCLES` number of steps, where `CYCLES = 8` by default.
 
 Here below I show the first, middle, and last step of grid refinement respectively:
 
+STEP 1
 ![cycle = 0](lab03/step-3/build/grid-0.svg)
+STEP 3
 ![cycle = 3](lab03/step-3/build/grid-3.svg)
+STEP 8
 ![cycle = 7](lab03/step-3/build/grid-7.svg)
 
