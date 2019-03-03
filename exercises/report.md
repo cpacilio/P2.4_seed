@@ -20,6 +20,10 @@ I also implemented a new subroutine `error_norms(const FunctionParser<dim>& fp) 
 
 Moreover, I repeated the last task manually, to get confidence with the various `fe_values` tools, and I verified that my manual implementation is consistent with the built-in one.
 
+Here below I show a 3D visualization of the numerical solution:
+
+![solution](solution.png)
+
 ## Exercise 3: Solve system with adaptive mesh
 File link: [step-3_v2.cc](lab03/step-3/step-3_v2.cc)
 
