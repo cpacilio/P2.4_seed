@@ -35,9 +35,14 @@ What I did: This is an adaptive mesh version of `step-3_v1.cc`. The main changes
 Here below I show the first, middle, and last step of grid refinement respectively:
 
 STEP 1
+
 ![cycle = 0](lab03/step-3/build/grid-0.svg)
+
 STEP 3
+
 ![cycle = 3](lab03/step-3/build/grid-3.svg)
+
 STEP 8
+
 ![cycle = 7](lab03/step-3/build/grid-7.svg)
 
